@@ -11,7 +11,7 @@ memory_file = os.path.join(BASE_DIR, "memory.json")
 
 class Chat:
     def __init__(self, api_key):
-        self.llm_client = LLMClient(api_key)
+        self.llm_client = LLMClient(api_key, model="openai/gpt-oss-120b")
         self.memory = Memory(memory_file)
 
     def send_message(self, message, system_prompt=SYSTEM_PROMPT):
@@ -33,14 +33,15 @@ class Chat:
        
 
         # ← save clean serialized JSON to memory, not the raw stream
-        clean_str = json.dumps(response)
-        self.memory.add_to_memory(message, clean_str)
+        
+        json_response = json.loads(response)
+        self.memory.add_to_memory(message, response)
 
-        return response
+        return json_response
 
 
 if __name__ == "__main__":
-    chat = Chat(api_key=GROQ_API_KEY)
+    chat = Chat(api_key=GROQ_API_KEY, )
     while True:
         user_input = input("You: ")
         if user_input.lower() in ["exit", "quit"]:

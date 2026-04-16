@@ -29,6 +29,7 @@ if __name__ == "__main__":
             
             outputs = python_shell.run_from_json(response)
             input_text = "SYSTEM EXECUTION RESULT:\n" + "\n".join(outputs)
+            print(input_text)  # print before sending back to LLM
 
             # send the tool output back immediately
             response = ozmed_chat.send_message(input_text)

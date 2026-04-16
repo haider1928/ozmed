@@ -21,8 +21,7 @@ class LLMClient:
             top_p=1,
             reasoning_effort="medium",
             stream=True,
-            stop=None,
-            response_format=None  # ← FORCES valid JSON output
+            stop=None
         )
         full_response = ""
         for chunk in completion:
