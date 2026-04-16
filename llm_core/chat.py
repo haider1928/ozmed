@@ -1,19 +1,20 @@
+import os
+import json
 from .llm_client import LLMClient
 from .memory import Memory
 from .config import GROQ_API_KEY, SYSTEM_PROMPT
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+memory_file = os.path.join(BASE_DIR, "memory.json")
+
+
 class Chat:
     def __init__(self, api_key):
         self.llm_client = LLMClient(api_key)
-        self.memory = Memory("memory.json")
+        self.memory = Memory(memory_file)
 
     def send_message(self, message, system_prompt=SYSTEM_PROMPT):
-        #print(f"Memory before sending message: {self.memory.get_memory()}")
-        #print(self.memory.get_memory() + [
-        #    {
-        #        "role": "user",
-        #        "content": message
-        #    }
-        #])
         response = self.llm_client.generate_response(
             messages=[
                 {
@@ -27,13 +28,22 @@ class Chat:
                 }
             ]
         )
-        #print(f"LLM response: {response}")
+
+        # ← extract only the last valid JSON (ignores reasoning draft blocks)
+       
+
+        # ← save clean serialized JSON to memory, not the raw stream
+        clean_str = json.dumps(response)
+        self.memory.add_to_memory(message, clean_str)
+
         return response
+
+
 if __name__ == "__main__":
     chat = Chat(api_key=GROQ_API_KEY)
     while True:
         user_input = input("You: ")
         if user_input.lower() in ["exit", "quit"]:
-            break       
+            break
         response = chat.send_message(user_input)
-        print(f"LLM: {response}")
+        print(response)

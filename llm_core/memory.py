@@ -5,14 +5,14 @@ import json
 class Memory:
     def __init__(self, memory_file):
         self.memory_file = memory_file
-        self.memory_limit = 6  # Max number of message pairs to keep in memory
+        self.memory_limit = 10  # Max number of message pairs to keep in memory
         self._init_file()
 
     # ----------------------------
     # Initialize file safely
     # ----------------------------
     def _init_file(self):
-        if not os.path.exists(self.memory_file):
+        if not os.path.exists(self.memory_file) or os.path.getsize(self.memory_file) == 0:
             with open(self.memory_file, "w") as f:
                 json.dump({"messages": []}, f, indent=4)
 
