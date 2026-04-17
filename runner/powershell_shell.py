@@ -1,6 +1,6 @@
 import subprocess
 
-def run_powershell(action_json):
+def run_powershell(action_json:dict):
     outputs = []
 
     if "run_powershell" not in action_json:

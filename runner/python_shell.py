@@ -13,24 +13,49 @@ class PythonShell:
 
         code_lines = action_json["python_shell"].get("code", [])
 
-        for line in code_lines:
-            try:
-                old_stdout = sys.stdout
-                sys.stdout = io.StringIO()
+        # 🔥 join all lines into ONE script
+        code_block = "\n".join(code_lines)
 
-                exec(line, self.env)  # persistent execution
+        try:
+            old_stdout = sys.stdout
+            sys.stdout = io.StringIO()
 
-                output = sys.stdout.getvalue().strip()
-                outputs.append(output if output else "OK")
+            exec(code_block, self.env)  # execute full block
 
-            except Exception as e:
-                outputs.append(f"ERROR: {str(e)}")
+            output = sys.stdout.getvalue().strip()
+            outputs.append(output if output else "OK")
 
-            finally:
-                sys.stdout = old_stdout
+        except Exception as e:
+            outputs.append(f"ERROR: {str(e)}")
+
+        finally:
+            sys.stdout = old_stdout
 
         return outputs
 
     def reset(self):
         self.env.clear()
         return ["shell reset"]
+if __name__ == "__main__":
+    shell = PythonShell()
+
+    test = {
+        "python_shell": {
+            "code": [
+                "x = 5",
+                "y = 10"
+            ]
+        }
+    }
+    test1 = {
+        "python_shell": {
+            "code": [
+                
+                "print(x + y)"
+            ]
+        }
+    }
+
+
+    print(shell.run_from_json(test))  # expect ['15']
+    print(shell.run_from_json(test1))  # expect ['15']
