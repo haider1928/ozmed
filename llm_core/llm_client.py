@@ -26,7 +26,7 @@ class LLMClient:
         full_response = ""
         for chunk in completion:
             delta = chunk.choices[0].delta.content or ""
-            print(delta, end="", flush=True)
+            #print(delta, end="", flush=True)
             full_response += delta
         print()
         return full_response

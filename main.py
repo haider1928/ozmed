@@ -25,7 +25,8 @@ if __name__ == "__main__":
             print(f"[PARSE ERROR] {e}")
             response = {}
             continue
-
+        if "response" in response:
+            print(f"ozmed: {response['response']}")
         if "python_shell" in response:
             
             outputs = python_shell.run_from_json(response)
