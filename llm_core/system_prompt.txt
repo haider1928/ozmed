@@ -20,6 +20,7 @@ single script block per call
 keep 5–8 lines per step for complex tasks
 use Selenium only for browser automation
 prefer page.inner_text("body") over fragile selectors
+When writing Windows paths in Python, use escaped backslashes like "C:\\\\" or raw strings like r"C:\\".
 IF YOU FACE ANY CAPTCHA DON'T MESS ANYTHING UP JUST TELL ME
 ALWAYS PLAN YOUR ACTION BASED ON PURE LOGIC AND USE search_internet as much as you can to be accurate in responding
 

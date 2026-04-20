@@ -2,7 +2,11 @@ import os
 import json
 from .llm_client import LLMClient
 from .memory import Memory
-from .config import GROQ_API_KEY, SYSTEM_PROMPT
+from .config import SYSTEM_PROMPT
+from .key_manager import KeyManager
+from .model_manager import ModelManager
+from utils.parser import Parser
+from ui import ui
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -10,12 +14,14 @@ memory_file = os.path.join(BASE_DIR, "memory.json")
 
 
 class Chat:
-    def __init__(self, api_key):
-        self.llm_client = LLMClient(api_key, model="openai/gpt-oss-120b")
+    def __init__(self, key_manager: KeyManager, model_manager: ModelManager):
+        self.llm_client = LLMClient(key_manager, model_manager)
         self.memory = Memory(memory_file)
+        self.parser = Parser()
 
     def send_message(self, message, system_prompt=SYSTEM_PROMPT):
-        response = self.llm_client.generate_response(
+        # 1. Ask the LLM to generate response
+        response_text = self.llm_client.generate_response(
             messages=[
                 {
                     "role": "system",
@@ -29,22 +35,15 @@ class Chat:
             ]
         )
 
-        # ← extract only the last valid JSON (ignores reasoning draft blocks)
-       
-
-        # ← save clean serialized JSON to memory, not the raw stream
-        
-        json_response = json.loads(response)
-        self.memory.add_to_memory(message, response)
-
-        return json_response
-
-
-if __name__ == "__main__":
-    chat = Chat(api_key=GROQ_API_KEY, )
-    while True:
-        user_input = input("You: ")
-        if user_input.lower() in ["exit", "quit"]:
-            break
-        response = chat.send_message(user_input)
-        print(response)
+        # 2. Extract JSON safely
+        try:
+            json_response = self.parser.extract_json(response_text)
+            
+            # save memory only if parse successful
+            self.memory.add_to_memory(message, json.dumps(json_response))
+            return json_response
+            
+        except ValueError as e:
+            ui.print_error(f"Parsing Failed: {str(e)}")
+            # Even if it crashed, return empty dict safely
+            return {}

@@ -26,7 +26,16 @@ class PythonShell:
             outputs.append(output if output else "OK")
 
         except Exception as e:
-            outputs.append(f"ERROR: {str(e)}")
+            error_text = str(e)
+            friendly_error = f"ERROR: Python script failed: {error_text}"
+
+            if "unterminated string literal" in error_text or "SyntaxError" in type(e).__name__:
+                friendly_error += (
+                    " | Hint: Windows paths need escaped backslashes like 'C:\\\\' "
+                    "or raw strings like r'C:\\'."
+                )
+
+            outputs.append(friendly_error)
 
         finally:
             sys.stdout = old_stdout
