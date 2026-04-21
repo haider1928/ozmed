@@ -1,6 +1,7 @@
 from llm_core.key_manager import KeyManager
 from llm_core.model_manager import ModelManager
 from llm_core.chat import Chat
+from llm_core.tool_output import OutputProcessor
 from runner.python_shell import PythonShell
 import json
 from ui import ui
@@ -18,6 +19,7 @@ def main():
     # 3. Initialize Chat and Env
     ozmed_chat = Chat(key_manager, model_manager)
     python_shell = PythonShell()
+    output_processor = OutputProcessor()
 
     ui.print_success("Ozmed AI successfully initialized.")
     ui.print_status("Type 'exit' or 'quit' to close.")
@@ -62,11 +64,20 @@ def main():
             ui.print_tool_start("python_shell", code)
             
             outputs = python_shell.run_from_json(response)
-            
-            output_text = "\n".join(outputs)
-            
+
+            processed = [
+                output_processor.package_tool_result(
+                    "python_shell",
+                    code,
+                    item,
+                    response["python_shell"].get("output_mode", "AUTO"),
+                ).get("result")
+                for item in outputs
+            ]
+
+            output_text = json.dumps(processed, indent=2, ensure_ascii=False)
             ui.print_tool_output("python_shell", output_text)
-            
+
             input_text = "SYSTEM EXECUTION RESULT:\n" + output_text
             continue
 
@@ -77,7 +88,18 @@ def main():
             
             ui.print_tool_start("run_powershell", commands)
             outputs = run_powershell(response)
-            output_text = "\n".join(outputs)
+
+            processed = [
+                output_processor.package_tool_result(
+                    "run_powershell",
+                    cmd,
+                    item,
+                    response["run_powershell"].get("output_mode", "AUTO"),
+                ).get("result")
+                for cmd, item in zip(response["run_powershell"].get("commands", []), outputs)
+            ]
+
+            output_text = json.dumps(processed, indent=2, ensure_ascii=False)
             ui.print_tool_output("run_powershell", output_text)
 
             input_text = "SYSTEM EXECUTION RESULT:\n" + output_text
@@ -94,12 +116,21 @@ def main():
                     
                     # We need a function to just run action dictionary on python_shell
                     outputs = python_shell.run_from_json(action)
-                    all_outputs.extend(outputs)
-                    
-                    output_text = "\n".join(outputs)
+                    processed = [
+                        output_processor.package_tool_result(
+                            "python_shell",
+                            code,
+                            item,
+                            action["python_shell"].get("output_mode", "AUTO"),
+                        ).get("result")
+                        for item in outputs
+                    ]
+                    all_outputs.extend(processed)
+
+                    output_text = json.dumps(processed, indent=2, ensure_ascii=False)
                     ui.print_tool_output("python_shell", output_text)
 
-            input_text = "SYSTEM EXECUTION RESULT:\n" + "\n".join(all_outputs)
+            input_text = "SYSTEM EXECUTION RESULT:\n" + json.dumps(all_outputs, indent=2, ensure_ascii=False)
             continue
 
         # Display and Execute: search_internet
@@ -109,9 +140,14 @@ def main():
             ui.print_tool_start("search_internet", ", ".join(queries))
             
             ddgs_results = search_internet(response)
-            output_text = json.dumps(ddgs_results, indent=4)
+            processed = output_processor.process(
+                command=", ".join(queries),
+                output=ddgs_results,
+                mode=response["search_internet"].get("output_mode", "AUTO"),
+            ).as_dict()
+            output_text = json.dumps(processed, indent=2, ensure_ascii=False)
             ui.print_tool_output("search_internet", output_text)
-            
+
             input_text = "SYSTEM EXECUTION RESULT:\n" + output_text
             continue
 
@@ -119,7 +155,15 @@ def main():
         if "reset_python_shell" in response:
             outputs = python_shell.reset()
             ui.print_tool_start("reset_python_shell", "")
-            output_text = "\n".join(outputs)
+            output_text = json.dumps(
+                output_processor.process(
+                    command="reset_python_shell",
+                    output=outputs,
+                    mode="SUMMARY",
+                ).as_dict(),
+                indent=2,
+                ensure_ascii=False,
+            )
             ui.print_tool_output("reset_python_shell", output_text)
             
             input_text = "SYSTEM EXECUTION RESULT:\n" + output_text

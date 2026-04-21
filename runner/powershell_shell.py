@@ -7,6 +7,7 @@ def run_powershell(action_json:dict):
         return ["No run_powershell action found"]
 
     commands = action_json["run_powershell"].get("commands", [])
+    mode = action_json["run_powershell"].get("output_mode", "AUTO")
 
     for cmd in commands:
         try:
@@ -20,14 +21,23 @@ def run_powershell(action_json:dict):
             stdout = result.stdout.strip()
             stderr = result.stderr.strip()
 
-            if stdout:
-                outputs.append(stdout)
-            elif stderr:
-                outputs.append(f"ERROR: {stderr}")
-            else:
-                outputs.append("OK")
+            outputs.append({
+                "command": cmd,
+                "status": "error" if result.returncode != 0 or stderr else "ok",
+                "mode_used": mode if mode != "AUTO" else ("FULL" if len(stdout) <= 1200 else "TAIL"),
+                "summary": "Command completed." if not stderr else "Command returned an error.",
+                "extracted_output": stdout[-1200:] if stdout else "",
+                "errors": [stderr] if stderr else [],
+            })
 
         except Exception as e:
-            outputs.append(f"ERROR: {str(e)}")
+            outputs.append({
+                "command": cmd,
+                "status": "error",
+                "mode_used": "AUTO",
+                "summary": "Command execution failed.",
+                "extracted_output": "",
+                "errors": [str(e)],
+            })
 
     return outputs
