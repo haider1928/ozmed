@@ -73,5 +73,59 @@ class UI:
             self.live.stop()
             self.live = None
 
+    def print_thinking(self, thinking):
+        intent = thinking.get("intent", "Unknown")
+        search_needed = thinking.get("search_needed", False)
+        search_reason = thinking.get("search_reason", "")
+        plan = thinking.get("plan", [])
+        shell = thinking.get("shell_choice", "None")
+        
+        content = f"[bold cyan]Intent:[/bold cyan] {intent}\n"
+        content += f"[bold cyan]Shell:[/bold cyan] {shell}\n"
+        content += f"[bold cyan]Search:[/bold cyan] {'[green]Yes[/green]' if search_needed else '[red]No[/red]'}\n"
+        if search_reason:
+            content += f"[dim cyan]Reason:[/dim cyan] {search_reason}\n"
+        
+        if plan:
+            content += "[bold cyan]Plan:[/bold cyan]\n"
+            for step in plan:
+                content += f"  [dim]- {step}[/dim]\n"
+
+        panel = Panel(
+            content.strip(),
+            title="[bold magenta]OZMED Thinking",
+            border_style="magenta",
+            expand=False
+        )
+        console.print(panel)
+
+    def print_improvement_report(self, report):
+        issues = report.get("issues", [])
+        if not issues:
+            return
+            
+        content = ""
+        for issue in issues:
+            severity = issue.get("severity", "medium").upper()
+            sev_color = "red" if "CRITICAL" in severity or "HIGH" in severity else ("yellow" if "MEDIUM" in severity else "blue")
+            
+            category = issue.get("category", "general").upper()
+            desc = issue.get("description", "")
+            fix = issue.get("fix", "")
+            
+            content += f"[{sev_color}][{severity}] [/{sev_color}] [bold white]{category}[/bold white]\n"
+            content += f"  [dim]{desc}[/dim]\n"
+            if fix:
+                content += f"  [green]Fix:[/green] {fix}\n"
+            content += "\n"
+            
+        panel = Panel(
+            content.strip(),
+            title="[bold yellow]OZMED-DEV Improvement Report",
+            border_style="yellow",
+            expand=False
+        )
+        console.print(panel)
+
 
 ui = UI()
