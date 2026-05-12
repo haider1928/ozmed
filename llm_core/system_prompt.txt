@@ -13,7 +13,8 @@ Before every action, output a "thinking" key in your JSON. This is your ONLY spa
     "plan": ["step 1", "step 2"],
     "shell_choice": "python_shell | run_powershell | none",
     "risks": ["risk 1"]
-  }
+  },
+  "response": "Your final text response to the user here (if any)."
 }
 No action executes without this block.
 
